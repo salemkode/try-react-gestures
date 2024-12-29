@@ -1,18 +1,51 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import { useSwipeGesture } from "./hooks/useSwipeGesture";
 import { NavBar } from "./components/NavBar";
+import gsap from "gsap";
 
 function App() {
   const [count, setCount] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
+  const cardInnerRef = useRef<HTMLDivElement>(null);
+
   const { swipeProgress } = useSwipeGesture(cardRef, {
     onSwipe: (direction) => {
       console.log(`Swiped ${direction}`);
+      // Animate card off screen when swiped
+      if (direction === "l" || direction === "r") {
+        gsap.to(cardInnerRef.current, {
+          x: direction === "r" ? "150%" : "-150%",
+          rotation: direction === "r" ? 45 : -45,
+          opacity: 0,
+          duration: 0.5,
+          ease: "power2.out",
+          onComplete: () => {
+            // Reset card position with no animation
+            gsap.set(cardInnerRef.current, {
+              x: 0,
+              rotation: 0,
+              opacity: 1,
+            });
+          },
+        });
+      }
     },
     minSwipeDistance: 100,
   });
+
+  // Animate card based on swipe progress
+  useEffect(() => {
+    if (cardInnerRef.current) {
+      gsap.to(cardInnerRef.current, {
+        x: swipeProgress * 0.5,
+        rotation: swipeProgress * 0.05,
+        duration: 0.1,
+        ease: "none",
+      });
+    }
+  }, [swipeProgress]);
 
   return (
     <div className="min-h-screen bg-slate-100 overflow-hidden">
@@ -22,12 +55,8 @@ function App() {
       <div className="p-4 h-[calc(100vh-3.5rem)]">
         <div ref={cardRef} className="relative h-full rounded-xl">
           <div
-            className="h-full bg-white shadow-lg rounded-xl transition-transform"
-            style={{
-              transform: `translateX(${swipeProgress * 0.5}px) rotate(${
-                swipeProgress * 0.05
-              }deg)`,
-            }}
+            ref={cardInnerRef}
+            className="h-full bg-white shadow-lg rounded-xl"
           >
             <div className="p-8">
               <div className="flex justify-center gap-8">
@@ -79,19 +108,13 @@ function App() {
               />
             </svg>
           </button>
-          <button 
-            className="w-12 h-12 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-all flex items-center justify-center transition-colors"
-            style={{
-              transform: `scale(${1 + swipeProgress * 0.005})`,
-              backgroundColor: swipeProgress > 50 ? '#ef4444' : '#ffffff'
-            }}
-          >
+          <button className="w-12 h-12 rounded-full bg-white text-red-500 shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
               fill="none"
               viewBox="0 0 24 24"
-              stroke={swipeProgress > 50 ? '#ffffff' : '#000000'}
+              stroke="currentColor"
             >
               <path
                 strokeLinecap="round"
