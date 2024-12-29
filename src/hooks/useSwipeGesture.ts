@@ -17,6 +17,7 @@ export const useSwipeGesture = (ref: React.RefObject<HTMLElement>, {
     minSwipeDistance = 50
 }: UseSwipeGestureProps = {}) => {
     const [swipeProgress, setSwipeProgress] = useState(0);
+    const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(null);
     const [swipeState, setSwipeState] = useState<SwipeState>({
         sX: 0,
         sY: 0,
@@ -29,6 +30,7 @@ export const useSwipeGesture = (ref: React.RefObject<HTMLElement>, {
         if (!element) return;
 
         const handleTouchStart = (e: TouchEvent) => {
+            e.preventDefault();
             const touch = e.touches[0];
             setSwipeState({
                 sX: touch.clientX,
@@ -40,6 +42,7 @@ export const useSwipeGesture = (ref: React.RefObject<HTMLElement>, {
         };
 
         const handleTouchMove = (e: TouchEvent) => {
+            e.preventDefault();
             if (!e.touches.length) return;
 
             const touch = e.touches[0];
@@ -50,8 +53,8 @@ export const useSwipeGesture = (ref: React.RefObject<HTMLElement>, {
             }));
 
             // Calculate horizontal and vertical differences
-            const deltaX = swipeState.eX - swipeState.sX;
-            const deltaY = swipeState.eY - swipeState.sY;
+            const deltaX = touch.clientX - swipeState.sX;
+            const deltaY = touch.clientY - swipeState.sY;
 
             // Calculate progress based on the larger movement
             const progress = Math.abs(deltaX) > Math.abs(deltaY)
@@ -59,9 +62,12 @@ export const useSwipeGesture = (ref: React.RefObject<HTMLElement>, {
                 : (Math.abs(deltaY) / minSwipeDistance) * 100;
 
             setSwipeProgress(Math.min(progress, 100));
+
+            setSwipeDirection(deltaX > 0 ? "right" : "left");
         };
 
-        const handleTouchEnd = () => {
+        const handleTouchEnd = (e: TouchEvent) => {
+            e.preventDefault();
             const deltaX = swipeState.eX - swipeState.sX;
             const deltaY = swipeState.eY - swipeState.sY;
 
@@ -91,6 +97,5 @@ export const useSwipeGesture = (ref: React.RefObject<HTMLElement>, {
         };
     }, [ref, minSwipeDistance, onSwipe, swipeState.eX, swipeState.sX, swipeState.eY, swipeState.sY]);
 
-    return { swipeProgress };
-}; 
-    
+    return { swipeProgress, swipeDirection };
+};

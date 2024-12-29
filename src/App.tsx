@@ -9,43 +9,63 @@ function App() {
   const [count, setCount] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const cardInnerRef = useRef<HTMLDivElement>(null);
+  const leftButtonRef = useRef<HTMLButtonElement>(null);
+  const rightButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { swipeProgress } = useSwipeGesture(cardRef, {
+  const { swipeProgress, swipeDirection } = useSwipeGesture(cardRef, {
     onSwipe: (direction) => {
       console.log(`Swiped ${direction}`);
-      // Animate card off screen when swiped
-      if (direction === "l" || direction === "r") {
-        gsap.to(cardInnerRef.current, {
-          x: direction === "r" ? "150%" : "-150%",
-          rotation: direction === "r" ? 45 : -45,
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.out",
-          onComplete: () => {
-            // Reset card position with no animation
-            gsap.set(cardInnerRef.current, {
-              x: 0,
-              rotation: 0,
-              opacity: 1,
-            });
-          },
-        });
-      }
     },
     minSwipeDistance: 100,
   });
 
-  // Animate card based on swipe progress
+  // Animate card and button based on swipe progress
   useEffect(() => {
-    if (cardInnerRef.current) {
+    if (cardInnerRef.current && leftButtonRef.current && rightButtonRef.current) {
+      const progressMultiplier = swipeDirection === "right" ? 1 : -1;
+
       gsap.to(cardInnerRef.current, {
-        x: swipeProgress * 0.5,
-        rotation: swipeProgress * 0.05,
+        rotate: swipeProgress * 0.05 * progressMultiplier,
         duration: 0.1,
         ease: "none",
       });
+
+      gsap.to(cardInnerRef.current, {
+        x: swipeProgress * 0.5 * progressMultiplier,
+        duration: 0.1,
+        ease: "none",
+      });
+
+      // Animate the appropriate button based on swipe direction
+      if (swipeDirection === "right") {
+        gsap.to(rightButtonRef.current, {
+          scale: 1 + swipeProgress * 0.005,
+          backgroundColor: swipeProgress > 50 ? "#ef4444" : "#ffffff",
+          color: swipeProgress > 50 ? "#ffffff" : "#ef4444",
+          duration: 0.1,
+        });
+        gsap.to(leftButtonRef.current, {
+          scale: 1,
+          backgroundColor: "#ffffff",
+          color: "#22c55e",
+          duration: 0.1,
+        });
+      } else {
+        gsap.to(leftButtonRef.current, {
+          scale: 1 + swipeProgress * 0.005,
+          backgroundColor: swipeProgress > 50 ? "#22c55e" : "#ffffff",
+          color: swipeProgress > 50 ? "#ffffff" : "#22c55e",
+          duration: 0.1,
+        });
+        gsap.to(rightButtonRef.current, {
+          scale: 1,
+          backgroundColor: "#ffffff",
+          color: "#ef4444",
+          duration: 0.1,
+        });
+      }
     }
-  }, [swipeProgress]);
+  }, [swipeProgress, swipeDirection]);
 
   return (
     <div className="min-h-screen bg-slate-100 overflow-hidden">
@@ -92,7 +112,10 @@ function App() {
 
         {/* Action Buttons */}
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4">
-          <button className="w-12 h-12 rounded-full bg-white text-green-500 shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center">
+          <button
+            ref={leftButtonRef}
+            className="w-12 h-12 rounded-full bg-white text-green-500 shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -108,7 +131,10 @@ function App() {
               />
             </svg>
           </button>
-          <button className="w-12 h-12 rounded-full bg-white text-red-500 shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center">
+          <button
+            ref={rightButtonRef}
+            className="w-12 h-12 rounded-full bg-white text-red-500 shadow-lg flex items-center justify-center"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
